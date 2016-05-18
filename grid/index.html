@@ -1,0 +1,531 @@
+<html>
+<head>
+<title>Make a Maze</title>
+</head>
+<script language=Javascript>
+
+var Width
+var Width2
+var Center
+var Area
+
+var Grid
+var Bollards
+
+var TrailHead
+var Summit
+
+var North     = 1
+var NorthEast = 1+2
+var      East =   2
+var SouthEast = 4+2
+var South     = 4
+var SouthWest = 4+8
+var      West =   8
+var NorthWest = 1+8
+
+var Free  = 15
+var NoNo  = 16
+
+var Dirs = new Array (
+	North, East, South, West, North, East, South )
+var TurnRight = new Array (
+	 0,  2,  4,  6,
+	 8, 10, 12, 14,
+	 1,  3,  5,  7,
+	 9, 11, 13, 15 )
+var TurnBack  = new Array (
+	 0,  4,  8, 12,
+	 1,  5,  9, 13,
+	 2,  6, 10, 14,
+	 3,  7, 11, 15 )
+var TurnLeft = new Array (
+	 0,  8,  1,  9,
+	 2, 10,  3, 11,
+	 4, 12,  5, 13,
+	 6, 14,  7, 15 )
+var StepTo
+var DirNames = new Array (
+	"nowhere",    "north",      "east",       "northeast",
+	"south",      "N/S",        "souteast",   "NE/SE",
+	"west",       "northwest",  "E/W",        "NE/NW",
+	"southwest",  "NW/SW",      "SE/SW",      "everywhere",
+	"blocked" )
+
+var TilePicts = new Array (16)
+var TrodPicts = new Array (16)
+
+var ArriveDef
+
+var Trace
+
+
+function InitKit (askWidth)
+{
+	with (Math) {
+		Width = 2 + max (9, min (25, askWidth))
+		Width2 = floor (Width / 2)
+		Center = Width * Width2 + Width2
+		Area = Width * Width
+		Grid = new Array (Area)
+		StepTo = [
+			  0,       -Width,   +1,       -Width+1,
+			 +Width,    0,       +Width+1, +1,
+			 -1,       -Width-1,  0,       -Width,
+			 +Width-1, -1,       +Width,    0     ]
+		TrailHead = Area - Width + Width2
+		Summit = Center + Width
+	}
+	ArriveDef = [
+	'var TilePicts = new Array (16+1+9)'
+,		'var TrodPicts = new Array (16+1+9)'
+,		'var Trail = new Array (-1, -1)'
+,		'var Standing = -1'
+,		'var Surrounding = 0'
+,		'var WillRetreat = 0'
+,		'var Retreating = 0'
+,		'var i'
+,		'for (i = 0; i < 16; i++) {'
+,		'	TilePicts[i] = new Image()'
+,		'	TilePicts[i].src = "images/tile" + i + ".png"'
+,		'	TrodPicts[i] = new Image()'
+,		'	TrodPicts[i].src = "images/trod" + i + ".png"'
+,		'}'
+,		'for (i = 0; i < 9; i++) {'
+,		'	var i0 = Math.floor (i / 3)'
+,		'	var i1 = Math.floor (i % 3)'
+,		'	TilePicts[16+1+i] = new Image()'
+,		'	TilePicts[16+1+i].src = "images/tile" + i0 + i1 + "a.png"'
+,		'	TrodPicts[16+1+i] = new Image()'
+,		'	TrodPicts[16+1+i].src = "images/trod" + i0 + i1 + "a.png"'
+,		'}'
+,		'function EnterPerimeter() {'
+,		'	if (WillRetreat == 2) WillRetreat = 1'
+,		'}'
+,		'function ExitPerimeter() {'
+,		'	if (WillRetreat < 2) {'
+,		'		WillRetreat += 1'
+,		'		if (WillRetreat == 2 && Retreating == 0) {'
+,		'			setTimeout ("Retreat()", 5000)'
+,		'			Retreating = 1'
+,		'} } }'
+,		'function Retreat() {'
+,		'	if (WillRetreat == 2 && Trail.length >= 4) {'
+,		'		Arrive (Trail[Trail.length-1], Trail[Trail.length-2])'
+,		'		setTimeout ("Retreat()", 300)'
+,		'		Retreating = 1'
+,		'	}'
+,		'	else {'
+,		'		Retreating = 0'
+,		'} }'
+,		'function Arrive (place, walls) {'
+,		'	var stood = Trail[Trail.length-1]'
+,		'	if (walls >= 16) {'
+,		'	}'
+,		'	else'
+,		'	if (place == ' + TrailHead + '&& Standing == -1) {'
+,		'		Trail.push (Surrounding)'
+,		'		Trail.push (Standing)'
+,		'		Standing = place'
+,		'		Surrounding = walls'
+,		'		document.images[Standing].src = TrodPicts[walls].src'
+,		'	}'
+,		'	else'
+,		'	if (place == stood && Standing == ' + Summit + ') {'
+,		'		document.images[' + (Center-Width-1) + '].src = TilePicts[16+1].src'
+,		'		document.images[' + (Center-Width  ) + '].src = TilePicts[16+2].src'
+,		'		document.images[' + (Center-Width+1) + '].src = TilePicts[16+3].src'
+,		'		document.images[' + (Center      -1) + '].src = TilePicts[16+4].src'
+,		'		document.images[' + (Center        ) + '].src = TilePicts[16+5].src'
+,		'		document.images[' + (Center      +1) + '].src = TilePicts[16+6].src'
+,		'		document.images[' + (Center+Width-1) + '].src = TilePicts[16+7].src'
+,		'		document.images[' + (Center+Width  ) + '].src = TilePicts[16+8].src'
+,		'		document.images[' + (Center+Width+1) + '].src = TilePicts[16+9].src'
+,		'		Standing = place'
+,		'		Surrounding = walls'
+,		'		Trail.pop(); Trail.pop()'
+,		'	}'
+,		'	else'
+,		'	if (place == stood) {'
+,		'		document.images[Standing].src = TilePicts[Surrounding].src'
+,		'		Standing = place'
+,		'		Surrounding = walls'
+,		'		Trail.pop(); Trail.pop()'
+,		'	}'
+,		'	else'
+,		'	if (place == Standing + ' + StepTo[North] + ' && place == ' + Summit + ') {'
+,		'		Trail.push (Surrounding)'
+,		'		Trail.push (Standing)'
+,		'		Standing = place'
+,		'		Surrounding = walls'
+,		'		document.images[' + (Center-Width-1) + '].src = TrodPicts[16+1].src'
+,		'		document.images[' + (Center-Width  ) + '].src = TrodPicts[16+2].src'
+,		'		document.images[' + (Center-Width+1) + '].src = TrodPicts[16+3].src'
+,		'		document.images[' + (Center      -1) + '].src = TrodPicts[16+4].src'
+,		'		document.images[' + (Center        ) + '].src = TrodPicts[16+5].src'
+,		'		document.images[' + (Center      +1) + '].src = TrodPicts[16+6].src'
+,		'		document.images[' + (Center+Width-1) + '].src = TrodPicts[16+7].src'
+,		'		document.images[' + (Center+Width  ) + '].src = TrodPicts[16+8].src'
+,		'		document.images[' + (Center+Width+1) + '].src = TrodPicts[16+9].src'
+,		'	}'
+,		'	else'
+,		'	if (place == Standing + ' + StepTo[North] + ' && (walls & ' + South + ') == 0'
+,		'	|| place == Standing + ' + StepTo[East] + ' && (walls & ' + West + ') == 0'
+,		'	|| place == Standing + ' + StepTo[South] + ' && (walls & ' + North + ') == 0'
+,		'	|| place == Standing + ' + StepTo[West] + ' && (walls & ' + East + ') == 0) {'
+,		'		Trail.push (Surrounding)'
+,		'		Trail.push (Standing)'
+,		'		Standing = place'
+,		'		Surrounding = walls'
+,		'		document.images[Standing].src = TrodPicts[walls].src'
+,		'} }'
+	]
+}
+
+function Main (askWidth)
+{
+	var i
+
+	InitKit (askWidth)
+
+	for (i = 0; i < 16; i++)
+	{
+		TilePicts[i] = new Image()
+		TilePicts[i].src = "images/tile" + i + ".png"
+		TrodPicts[i] = new Image()
+		TrodPicts[i].src = "images/trod" + i + ".png"
+	}
+
+	ClearGrid()
+	MakeCentralRoom()
+
+	Bollards = Array()
+	PlanBlockingBollards()
+	PlanGuidingBollards()
+	SetBollards()
+
+	Trace = "" // "<hr><h3>Log</h3>\n"
+	Wander (16 * (Center + StepTo[South]) + South)
+
+	ClearBollards()
+
+	Grid[ TrailHead                 ]  = East + West
+	Grid[ TrailHead + StepTo[North] ] -= South
+
+	ShowGrid()
+}
+
+function ClearGrid()
+{
+	for (here = 0; here < Area; here++) {
+		Grid[here] = Free
+	}
+	for (here = 0; here < Width; here++) {
+		Grid[            here   ] = NoNo
+		Grid[      Width*here   ] = NoNo
+		Grid[ Area      -here-1 ] = NoNo
+		Grid[ Area-Width*here-1 ] = NoNo
+	}
+}
+
+function MakeCentralRoom()
+{
+	Grid[ Center                     ] = 0
+	Grid[ Center + StepTo[NorthWest] ] = NorthWest;
+	Grid[ Center + StepTo[North    ] ] = North;
+	Grid[ Center + StepTo[NorthEast] ] = NorthEast;
+	Grid[ Center + StepTo[     East] ] =      East;
+	Grid[ Center + StepTo[SouthEast] ] = SouthEast;
+	Grid[ Center + StepTo[South    ] ] = South;
+	Grid[ Center + StepTo[SouthWest] ] = SouthWest;
+	Grid[ Center + StepTo[     West] ] =      West;
+	Grid[ Center + StepTo[NorthWest] ] = NorthWest;
+}
+
+function PlanBlockingBollards()
+{
+	var marker = Math.floor (Width2 + (Width2+1)/2)
+	if (Math.random() >= 0.5) {
+		for (i = Width2 + 2; i < marker; i++) {
+			Bollards.push (i*Width + Width2-1)
+		}
+		Bollards.push( marker*Width + Width2 )
+		for (i = marker + 1; i < Width-1; i++) {
+			Bollards.push (i*Width + Width2+1)
+		}
+	}
+	else {
+		for (i = Width2 + 2; i < marker; i++) {
+			Bollards.push (i*Width + Width2+1)
+		}
+		Bollards.push( marker*Width + Width2 )
+		for (i = marker + 1; i < Width-1; i++) {
+			Bollards.push (i*Width + Width2-1)
+		}
+	}
+}
+
+function PlanGuidingBollards()
+{
+	range = Math.floor ((Width2 - 1) / 2)
+	if (Math.random() >= 0.5) {
+		for (i = 0; i < range; i++) {
+			Bollards.push (Center + 2*StepTo[NorthWest] + i*StepTo[West])
+			Bollards.push (Center + 2*StepTo[NorthEast] + i*StepTo[North])
+			Bollards.push (Center + 2*StepTo[SouthEast] + i*StepTo[East])
+		}
+	}
+	else {
+		for (i = 0; i < range; i++) {
+			Bollards.push (Center + 2*StepTo[NorthEast] + i*StepTo[East])
+			Bollards.push (Center + 2*StepTo[NorthWest] + i*StepTo[North])
+			Bollards.push (Center + 2*StepTo[SouthWest] + i*StepTo[West])
+		}
+	}
+}
+
+function SetBollards()
+{
+	var i
+	for (i = 0; i < Bollards.length; i++)
+		Grid[Bollards[i]] = NoNo;
+}
+
+function ClearBollards()
+{
+	for (i = 0; i < Bollards.length; i++) {
+		var here = Bollards[i]
+		var j
+		if (Trace != "") Trace +=
+			"<br><br>Clear bollard at " + Math.floor (here / Width) +
+			":" + (here % Width)
+		j = Math.min (3, Math.floor (4 * Math.random()))
+		for (; j < Dirs.length; j++) {
+			var dir = Dirs[j]
+			var there = here + StepTo[dir]
+			if (Trace != "") Trace +=
+				", look " + DirNames[dir] + " and find " + Grid[there]
+			if (Grid[there] != NoNo
+			&& (there < Center-Width-1 || there > Center-Width-1)
+			&& (there < Center      -1 || there > Center      +1)
+			&& (there < Center+Width-1 || there > Center+Width+1)) {
+				Grid[here]  = Free - dir
+				Grid[there] -= TurnBack[dir]
+				if (Trace != "") Trace += ", cleared OK"
+				break
+			}
+		}
+	}
+}
+
+function ShowGrid()
+{
+	var row
+	var col
+
+	var console = null  // the pop-up window
+	var winHeight = Math.floor (Width*32 + 5*32)
+	var winWidth = Math.floor (Width*32 + 9*32)
+	console = window.open (
+			"", 
+			"Green Maze",
+			"resizable=yes,scrollbars=yes,height=" + winHeight +
+				",width=" + winWidth)
+	console.document.open ("text/html")
+	console.document.write ("<html>\n<head>\n")
+	console.document.write ("<title>Grid</title>\n")
+	console.document.write ("<script language=javascript>\n")
+	for (row = 0; row < ArriveDef.length; row++)
+		console.document.write (ArriveDef[row] + "\n")
+	console.document.write ("</" + "script>\n</head>\n")
+	console.document.write ("<body>\n")
+	console.document.write ("<table id=perimeter" +
+		" width=100% cellspacing=32 cellpadding=32" +
+		" border bgcolor=papayawhip" +
+		" onmouseover=\"EnterPerimeter()\"" +
+		" onmouseout=\"ExitPerimeter()\">\n")
+	console.document.write ("<tr><td bgcolor=peru>\n")
+	console.document.write ("<table align=center cellpadding=0 cellspacing=0>\n")
+
+	for (row = 0; row < Width; row++)
+	{
+		console.document.write ("  <tr>\n")
+		for (col = 0; col < Width; col++)
+		{
+			var here = row * Width + col
+			var cell = Grid[here]
+			if (row == Width2 + 1
+			&&  col == Width2) {
+				console.document.write (
+					'    <td id=' + (row*100+col) +
+					' onmouseover="Arrive(' +
+					here + "," + cell +
+					')"><img src="images/tile21a.png"></td>\n' )
+			}
+			else
+			if (row >= Width2 - 1 && row <= Width2 + 1
+			&&  col >= Width2 - 1 && col <= Width2 + 1) {
+				console.document.write (
+					'    <td id=' + (row*100+col) +
+					'><img src=\"images/tile' +
+					(row-Width2+1) + (col-Width2+1) +
+					'a.png"></td>\n' )
+			}
+			else {
+				console.document.write (
+					'    <td id=' + (row*100+col) +
+					' onmouseover="Arrive(' +
+					here + "," + cell +
+					')"><img src="images/tile' + cell +
+					'.png"></td>\n' )
+			}
+		}
+		console.document.write ("  </tr>\n")
+	}
+
+	console.document.write ("</table>\n")
+	console.document.write ("</td></tr>\n</table>")
+	if (Trace != "")
+		console.document.write ("<p>" + Trace + "</p>\n")
+	console.document.write ("</body></html>\n")
+	console.document.close()
+}
+
+function Wander (hiker)
+{
+	var hikers = new Array()
+	var snoozers = new Array()
+	var sleepers = new Array()
+	var limit = 2 * (Area - 2*Width + 1)
+	var perseverance
+	var awaken
+	var i
+
+	hikers.push (hiker)
+	awaken = 1
+	perseverance = 1.0
+	for (i = 0; i < limit; i++)
+	{
+		if (Trace != "")
+			Trace += "<p>Morning " + i + " with "+
+					hikers.length + " hikers, " +
+					snoozers.length + " snoozers, and " +
+					sleepers.length + " sleepers"
+
+		if (awaken == 0 || hikers.length == 0) {
+			if      (snoozers.length > 0)  hiker = snoozers.pop()
+			else if (sleepers.length > 0)  hiker = sleepers.shift()
+			else if (hikers.length > 0)    hiker = hikers.shift()
+			else                           break
+			awaken = hikers.length
+		}
+		else if (hikers.length > 0) {
+			hiker = hikers.shift()
+			awaken--
+		}
+		else break
+
+		var here = Math.floor (hiker / 16)
+		var dir  = hiker % 16
+		var there = here + StepTo[dir]
+
+		if (Trace != "") Trace +=
+				"<br>- hiker at " + Math.floor (here / Width) +
+				":" + (here % Width) +
+				" facing " + DirNames[dir] +
+				" to " + Math.floor (there / Width) +
+				":" + (there % Width)
+
+		if (Trace != "") Trace +=
+				"<br>- cell there is " + Grid[ there ] +
+				", ahead is " + Grid[ there + StepTo[dir] ] +
+				", left is "  + Grid[ there + TurnLeft[dir] ] +
+				", right is " + Grid[ there + TurnRight[dir] ]
+
+		if (Grid[there] == Free) {
+
+			Grid[here]  -= dir
+			Grid[there] -= TurnBack[dir]
+			if (Trace != "") Trace += ", go forward "
+			var mustTurn = (perseverance < Math.random() + 0.25)
+			perseverance = mustTurn ? 1.0 : perseverance * 0.75
+
+			if (Grid[ there + StepTo[dir] ] == Free) {
+				var hiker1 = 16*there + dir
+				if (Trace != "") Trace += ", straight OK"
+				if (mustTurn) sleepers.push (hiker1)
+				else          hikers.push (hiker1)
+			}
+
+			if (Grid[ there + StepTo[TurnLeft[dir]] ] == Free) {
+				var hiker1 = 16*there + TurnLeft[dir]
+				if (Trace != "") Trace += ", left OK"
+				if (mustTurn) hikers.push (hiker1)
+				else          snoozers.push (hiker1)
+			}
+
+			if (Grid[ there + StepTo[TurnRight[dir]] ] == Free) {
+				var hiker1 = 16*there + TurnRight[dir]
+				if (Trace != "") Trace += ", right OK"
+				if (mustTurn) hikers.push (hiker1)
+				else          snoozers.push (hiker1)
+			}
+		}
+
+		if (Trace != "") Trace += "</p>\n";
+	}
+}
+
+</script>
+
+<style type="text/css">
+TABLE { border-collapse: collapse; border: 1px solid blue }
+TD { border: 1px solid blue;
+  padding: 7px;
+  font-family: arial, sans-serif; font-size: 12;
+  text-align: center }
+.BANNER { color: darkgreen;
+  font-family: arial, sans-serif;
+  font-size: 20;
+  text-align: center }
+</style>
+
+<form name="opening">
+  <p>&nbsp;</p>
+  <table align=center width=60%>
+  <tr><td class="BANNER" colspan=2>
+  Make a Maze
+  </header></td></tr>
+  <tr><td colspan=2>
+    <p>Click the button to display a random maze of the selected size
+    (sorry, no choice of colour).
+    The maze will be shown in a pop-up window.
+    You can wander through the maze with your mouse:
+    start at the entrance at the bottom
+    and find your way to the central courtyard.
+    The algorithm for generating mazes is not brilliant
+    so sometimes it makes mazes that are startlingly easy to solve.</p>
+  </td></tr>
+  <tr><td align=center valign=center>
+    <p>
+      <input type="button" value="Make a Green Maze" onClick="Main(AskWidth.value)">
+    </p>
+  </td>
+  <td align=center valign=center>
+  <p>Width of the maze:
+  <select name="AskWidth">
+    <option value=9> 9</option>
+    <option value=11 selected>11</option>
+    <option value=13>13</option>
+    <option value=15>15</option>
+    <option value=17>17</option>
+    <option value=19>19</option>
+    <option value=21>21</option>
+  </select>
+  </p>
+  </td></tr>
+  </table>
+</form>
+
+</html>
+
